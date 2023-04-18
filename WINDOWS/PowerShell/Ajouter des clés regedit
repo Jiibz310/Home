@@ -1,0 +1,38 @@
+# Chemin du fichier bloc-notes contenant la liste des serveurs
+$cheminFichierServeurs = "C:\tmp\jb\test.txt"
+
+# Clé de registre à ajouter (1ère clé)
+$cheminCleRegistre1 = "HKLM:\Software\Microsoft\Cryptography\Wintrust\Config"
+$nomValeur1 = "EnableCertPaddingCheck"
+$valeur1 = 1
+
+# Clé de registre à ajouter (2ème clé)
+$cheminCleRegistre2 = "HKLM:\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config"
+$nomValeur2 = "EnableCertPaddingCheck"
+$valeur2 = 1
+
+# Lecture de la liste des serveurs depuis le fichier bloc-notes
+$serveurs = Get-Content $cheminFichierServeurs
+
+# Parcours de la liste des serveurs
+foreach ($serveur in $serveurs) {
+    Write-Host "Traitement du serveur : $serveur"
+
+    # Connexion au serveur distant
+    $session = New-PSSession -ComputerName $serveur
+
+    # Ajout de la 1ère clé de registre
+    Invoke-Command -Session $session -ScriptBlock {
+        Set-ItemProperty -Path $args[0] -Name $args[1] -Value $args[2]
+    } -ArgumentList $cheminCleRegistre1, $nomValeur1, $valeur1
+
+    # Ajout de la 2ème clé de registre
+    Invoke-Command -Session $session -ScriptBlock {
+        Set-ItemProperty -Path $args[0] -Name $args[1] -Value $args[2]
+    } -ArgumentList $cheminCleRegistre2, $nomValeur2, $valeur2
+
+    # Fermeture de la session
+    Remove-PSSession $session
+
+    Write-Host "Clés de registre ajoutées sur le serveur : $serveur"
+}
