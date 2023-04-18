@@ -1,0 +1,1 @@
+Get-ChildItem -Path "C:\Windows\SoftwareDistribution\Download" -Recurse -File | Where-Object {$_.LastWriteTime -lt '12/05/2022'} |Remove-Item
