@@ -1,0 +1,32 @@
+# Définir le chemin du fichier texte contenant les noms des serveurs
+$cheminFichierServeurs = "C:\tmp\jb\test.txt"
+
+# Lire les noms des serveurs depuis le fichier texte
+$serveurs = Get-Content $cheminFichierServeurs
+
+# Parcourir la liste des serveurs
+foreach ($serveur in $serveurs) {
+    try {
+        # Se connecter au serveur distant
+        $session = New-PSSession -ComputerName $serveur
+
+        # Créer le premier répertoire pour les clés de registre
+        Invoke-Command -Session $session -ScriptBlock {
+            New-Item -Path "HKLM:\Software\Microsoft\Cryptography\Wintrust\Config\" -Force
+        }
+
+        # Créer le deuxième répertoire pour les clés de registre
+        Invoke-Command -Session $session -ScriptBlock {
+            New-Item -Path "HKLM:\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" -Force
+        }
+
+        Write-Host "Clés de registre créées avec succès sur $serveur."
+    } catch {
+        Write-Host "Erreur lors de la création des clés de registre sur $serveur : $_.Exception.Message"
+    } finally {
+        # Fermer la session PowerShell pour le serveur distant
+        if ($session) {
+            Remove-PSSession $session
+        }
+    }
+}
