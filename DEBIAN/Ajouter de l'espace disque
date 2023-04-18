@@ -1,0 +1,8 @@
+Ajouter un disque sur la machine
+vgs #Montrer l'espace disque restant
+cat /var/log/message #Pour voir quel /dev/XX est ajouté
+pvcreate /dev/XX
+vgextend VGXXX /dev/XX # Trouver VGXXX avec la commande vgs
+lvextend -L +10G /dev/VGXXX/lv_XXX
+resize2fs /dev/mapper/VGXXX-lv_XXX
+df -h #pour verifier si tout est ok
