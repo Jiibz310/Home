@@ -1,0 +1,116 @@
+from pyVim.connect import SmartConnect, Disconnect
+import ssl
+from pyVmomi import vim
+
+# Désactive la vérification SSL
+context = ssl._create_unverified_context()
+
+# Paramètres de connexion vCenter
+vcenter_host = "cefrsvc-eurvce2.ce.sdxcorp.net"
+vcenter_user = "Nom_De_Compte"
+vcenter_password = "Motdepasse"
+
+# Liste des noms d'hôtes ESXi
+esxi_names = ["cefrsvc-euresx1.ce.sdxcorp.net",
+              "cefrsvc-euresx2.ce.sdxcorp.net",
+              "cefrsvc-euresx3.ce.sdxcorp.net",
+              "cefrsvc-euresx4.ce.sdxcorp.net",
+              "cefrsvc-euresx5.ce.sdxcorp.net"]
+
+# Noms des serveurs virtuels
+serveur_names = ["cefrsvc-eurss07", "cefrsvc-eurtst4", "cefrsvc-eurtst3"]
+
+# Taille en Go du nouveau disque dur à ajouter
+size_gb = 6
+
+# Connexion à vCenter
+try:
+    si = SmartConnect(
+        host=vcenter_host,
+        user=vcenter_user,
+        pwd=vcenter_password,
+        port=443,
+        sslContext=context
+    )
+    print("Connexion à vCenter réussie")
+
+    # Recherche des hôtes ESXi par leur nom
+    content = si.RetrieveContent()
+    search_index = content.searchIndex
+    esxis = []
+    for esxi_name in esxi_names:
+        esxi = search_index.FindByDnsName(dnsName=esxi_name, vmSearch=False)
+        if esxi is None:
+            print(f"L'hôte ESXi {esxi_name} n'a pas été trouvé dans vCenter.")
+        else:
+            esxis.append(esxi)
+
+    # Ajout du disque dur virtuel à chaque serveur virtuel trouvé
+    for esxi in esxis:
+        # Recherche du serveur virtuel par son nom sur l'hôte ESXi spécifié
+        for server_name in serveur_names:
+            for vm in esxi.vm:
+                if vm.name == server_name:
+                    server = vm
+                    # Création d'un nouvel objet de configuration de disque
+                    new_disk_spec = vim.vm.device.VirtualDeviceSpec()
+                    new_disk_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+                    new_disk_spec.fileOperation = vim.vm.device.VirtualDeviceSpec.FileOperation.create
+
+                    # Création d'un objet de disque dur virtuel
+                    new_disk = vim.vm.device.VirtualDisk()
+                    new_disk.key = -1
+                    new_disk.unitNumber = len(server.config.hardware.device)
+
+                    # Recherche d'un contrôleur SCSI disponible
+                    controller = None
+                    for device in server.config.hardware.device:
+                        if isinstance(device, vim.vm.device.VirtualSCSIController) and len(device.device) < 15:
+                            controller = device
+                            break
+
+                    if controller is None:
+                        # Création d'un nouveau contrôleur SCSI
+                        controller_spec = vim.vm.device.VirtualDeviceSpec()
+                        controller_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+                        controller_spec.device = vim.vm.device.ParaVirtualSCSIController()
+                        controller_spec.device.busNumber = 0
+                        controller_spec.device.sharedBus = vim.vm.device.VirtualSCSISharing.noSharing
+                        new_controller = True
+                        print("Nouveau contrôleur SCSI créé")
+                    else:
+        # Utilisation du contrôleur SCSI disponible
+                        controller_spec = vim.vm.device.VirtualDeviceSpec()
+                        controller_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
+                        controller_spec.device = controller
+                        new_controller = False
+
+    # Utilisation du contrôleur SCSI pour le nouveau disque
+                        new_disk.controllerKey = controller_spec.device.key
+                        new_disk.unitNumber = len(controller_spec.device.device)
+                        new_disk_spec.device = new_disk
+
+    # Spécification des attributs du disque
+                        new_disk_spec.device.backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
+                        new_disk_spec.device.backing.diskMode = "persistent"
+                        new_disk_spec.device.backing.thinProvisioned = True
+                        new_disk_spec.device.backing.fileName = f"[{server.datastore[0].info.name}] {server.name}/{server.name}_{new_disk.unitNumber}.vmdk"
+                        new_disk_spec.device.backing.datastore = server.datastore[0]
+
+    # Spécification de la taille du disque
+                        new_disk_spec.device.capacityInKB = size_gb * 1024 * 1024
+
+    # Ajout du disque au serveur virtuel
+                        server_spec = vim.vm.ConfigSpec()
+                        server_spec.deviceChange = [new_disk_spec]
+                        server.ReconfigVM_Task(spec=server_spec)
+
+    print(f"Un nouveau disque dur de {size_gb} Go a été ajouté au serveur virtuel {server_name}.")
+
+    # Déconnexion de vCenter
+    Disconnect(si)
+    print("Déconnexion de vCenter réussie")
+except Exception as e:
+    print("Erreur lors de la connexion à vCenter :", e)
+    Disconnect(si)
+    exit(1)
