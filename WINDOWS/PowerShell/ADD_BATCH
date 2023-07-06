@@ -1,0 +1,22 @@
+Hiera : 
+
+  'd:\batchs\SPF.Order.OrderProcessing.Batch':
+    ensure: directory
+
+
+# schedule tasks
+scheduled_task:
+  'SPF.Order.OrderProcessing.Batch':
+    command : 'c:/Windows/system32/windowspowershell/v1.0/powershell.exe'
+    arguments : '-Command "d:\batchs\SPF.Order.OrderProcessing.Batch\SPF.Order.OrderProcessing.Batch.exe"'
+    enabled : 'true'
+
+
+
+Jenkins : 
+Reference batch : SPF.Order.OrderProcessing.Batch
+Remplacer : 
+SPF…
+Nom des serveurs
+Repository URL change (gitlab)
+Supervision
