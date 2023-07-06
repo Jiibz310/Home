@@ -20,3 +20,5 @@ SPF…
 Nom des serveurs
 Repository URL change (gitlab)
 Supervision
+
+Si ca doit utiliser un filer => créer des users pour chaque env + mettre les droits d’accès au filer
