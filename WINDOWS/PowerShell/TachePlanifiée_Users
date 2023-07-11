@@ -1,7 +1,7 @@
 Nous avons besoin dans certains cas de créer des utilisateurs.
 
 Premier point:
-Faire les modifications au niveau de hiera. 
+Faire les modifications au niveau de hiera. = Voir la configuration de EUROS si besoins
 
 Les lignes à ajouter dans folder : 
   'd:\batchs\SPF.Order.OrderProcessing.Batch':
@@ -18,6 +18,8 @@ scheduled_task:
     working_dir : 'd:\batchs\SPF.Order.OrderProcessing.XXX'
     user : 'CE-SDXCORP\CE.FR.SVC.O.S.XXX'
     password : chiffré
+
+/!\ pour la qual et la prod, le noeud par exemple lbnos12 doit avoir le status de la TP en 'false'
 
 
 Deuxième point : 
