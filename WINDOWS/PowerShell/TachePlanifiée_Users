@@ -1,0 +1,41 @@
+Nous avons besoin dans certains cas de créer des utilisateurs.
+
+Premier point:
+Faire les modifications au niveau de hiera. 
+
+Les lignes à ajouter dans folder : 
+  'd:\batchs\SPF.Order.OrderProcessing.Batch':
+    ensure: directory
+
+Les lignes à ajouter dans batch, (ajouter le paragraphe si il n'existe pas) :
+
+# schedule tasks
+scheduled_task:
+  'SPF.Order.OrderProcessing.Batch':
+    command : 'c:/Windows/system32/windowspowershell/v1.0/powershell.exe'
+    arguments : '-Command "d:\batchs\SPF.Order.OrderProcessing.Batch\SPF.Order.OrderProcessing.XXX.exe"'
+    enabled : 'true'
+    working_dir : 'd:\batchs\SPF.Order.OrderProcessing.XXX'
+    user : 'CE-SDXCORP\CE.FR.SVC.O.S.XXX'
+    password : chiffré
+
+
+Deuxième point : 
+Aller dans ARS, Chercher un utilisateurs déjà créer par exemple : CE.FR.SVC.O.S.Rec et le dupliquer.
+Le configurer comme celui ci.
+/!\ Il faut lui retirer les groupes auquels il appartient car ils seront copié aussi.
+Il faut ensuite lui ajouter le groupe dont il a besoin pour accèder au repertoire que le dev veut.
+
+Troisième point : 
+Recupérer le mot de passe non chiffré, se connecter sur lbnadm1 puis sur lbnppt1, et chiffrer le mot de passe comme ceci : /usr/bin/eyaml encrypt -s '423v3tm@%E+VNT7ki=(Q' 
+/!\ Il faut être en root.
+Ensuite on recupère le mot de passe chiffré commencant par ENC et on le renseigne dans hiera.
+
+Quatrième point:
+
+La tâche planifiée devrait remonter sur le serveur avec un "puppet agent -t"
+Si c'est le cas, et qu'il y a bien renseigné l'utilisateur que nous avons crée, on va faire "executer"
+Puis renseigner gpedit.msc
+Puis nous allons aller dans le chemin la : Configuration de l'ordinateur -> Paramètre Windows -> Paramètre de sécurité -> Stratégie local -> Attribution des droits utilisateurs
+Ensuite descendre dans les stratégie et il faut appuyer sur "Ouvrir une session en tant que tâche" et renseigné l'utilisateur qui declenchera le batch.
+
