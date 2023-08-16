@@ -1,0 +1,25 @@
+zoneobjectcopy "zoneset_fabric1_20210423", "zoneset_fabric1_20230816"
+cfgenable zoneset_fabric1_20230816
+alicreate "CEFRSVC_EURESX6", "10:00:70:b7:e4:03:0f:37"
+zonecreate "zone_CEFRSVC_EURESX6_CEFRSVC_EURPUR1_CT0FC9", "CEFRSVC_EURESX6; CEFRSVC_EURPUR1_CT0FC9"
+zonecreate "zone_CEFRSVC_EURESX6_CEFRSVC_EURPUR1_CT1FC9", "CEFRSVC_EURESX6; CEFRSVC_EURPUR1_CT1FC9"
+cfgadd "zoneset_fabric1_20230816","zone_CEFRSVC_EURESX6_CEFRSVC_EURPUR1_CT0FC9"
+cfgadd "zoneset_fabric1_20230816","zone_CEFRSVC_EURESX6_CEFRSVC_EURPUR1_CT1FC9"
+cfgenable zoneset_fabric1_20230816
+cfgsave
+
+Commande pour trouver les infos : 
+cfgshow
+switchshow
+
+Modèle : 
+
+zoneobjectcopy "<Ancienne configuration>", "<Nouvelle configuration au format CFG_AAAAMMJJ>"
+cfgenable <Nouvelle configuration>
+alicreate "<Nom de l'équipement>", "<Numéro d'identification du port>"
+zonecreate "zone_<Nom de l'équipement>_CEFRSVC_LBNPUR1_CT0FC8", "<Alias du nouvel équipement>; <CEFRSVC_LBNPUR1_CT0FC8>"
+zonecreate "zone_<Nom de l'équipement>_CEFRSVC_LBNPUR1_CT1FC8", "<Alias du nouvel équipement>; <CEFRSVC_LBNPUR1_CT1FC8>"
+cfgadd "<Nouvelle configuration>", "<Nom de la nouvelle zone CT0FC8>"
+cfgadd "<Nouvelle configuration>", "<Nom de la nouvelle zone CT1FC8>"
+cfgenable <Nouvelle configuration>
+cfgsave
